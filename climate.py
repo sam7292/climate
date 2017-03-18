@@ -35,6 +35,15 @@ import smbus
 import time
 import datetime
 import Adafruit_DHT
+import logging
+
+logger = logging.getLogger('climate_application')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('./logs/climate.log')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s|%(message)s')
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 DHT_SENSOR = Adafruit_DHT.DHT22
 
@@ -121,25 +130,29 @@ def main():
   lcd_init()
 
   while True:
+    climate = get_climate()
+    currenttime = get_currenttime()
+
+    logger.info(climate)    
 
     # Send some test
-    lcd_string(get_currenttime(),LCD_LINE_1)
-    lcd_string(get_climate(),LCD_LINE_2)
+    lcd_string(currenttime,LCD_LINE_1)
+    lcd_string(get_climate_str(climate),LCD_LINE_2)
 
     time.sleep(5)
-  
-    # Send some more text
-#    lcd_string(">         RPiSpy",LCD_LINE_1)
-#    lcd_string(">        I2C LCD",LCD_LINE_2)
-#    time.sleep(3)
+
+def get_climate_str(climate):
+  val = ''
+  val = '{0}*C {1}%'.format(climate.split('|')[0],climate.split('|')[1])
+  return val
 
 def get_climate():
   humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
-  climate_value = ''
+  val = '|'
 
   if humidity is not None and temperature is not None:
-    climate_value = '{0:0.1f}*C {1:0.1f}%'.format(temperature, humidity)
-  return climate_value
+    val = '{0:0.1f}|{1:0.1f}'.format(temperature, humidity)
+  return val
 
 def get_currenttime():
   current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
